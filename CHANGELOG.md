@@ -7,6 +7,11 @@
   `UnknownContactManifoldsWorkspace`, which the relevant algorithm can replace with a workspace
   of the correct type at its next execution.
 
+### Fixed
+
+- Fix hollow ray casts (`solid = false`) from inside a cylinder, cone, convex polyhedron or convex
+  polygon returning a wrong exit time when the ray's direction isn't unit length.
+
 ## 0.31.1
 
 ### Modified

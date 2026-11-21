@@ -30,18 +30,21 @@ pub fn local_ray_intersection_with_support_map_with_params<G: ?Sized + SupportMa
         inter.and_then(|(time_of_impact, normal)| {
             if time_of_impact.is_zero() {
                 // the ray is inside of the shape.
-                let ndir = ray.dir.normalize();
+                // Cast back from a point past the shape along the ray, with a unit direction
+                // so `shift` and the back-cast's time are both distances, then convert the
+                // exit's distance into the ray's own time unit.
+                let (ndir, dir_length) = ray.dir.normalize_and_length();
                 let supp = shape.local_support_point(ndir);
                 let eps: Real = 0.001;
                 let shift = (supp - ray.origin).dot(ndir) + eps;
-                let new_ray = Ray::new(ray.origin + ndir * shift, -ray.dir);
+                let new_ray = Ray::new(ray.origin + ndir * shift, -ndir);
 
                 // TODO: replace by? : simplex.translate_by(&(ray.origin - new_ray.origin));
                 simplex.reset(CsoPoint::single_point(supp - new_ray.origin));
 
                 gjk::cast_local_ray(shape, simplex, &new_ray, shift + eps).and_then(
                     |(time_of_impact, outward_normal)| {
-                        let time_of_impact = shift - time_of_impact;
+                        let time_of_impact = (shift - time_of_impact).max(0.0) / dir_length;
                         if time_of_impact <= max_time_of_impact {
                             Some(RayIntersection::new(
                                 time_of_impact,
