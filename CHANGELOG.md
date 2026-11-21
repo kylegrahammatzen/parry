@@ -7,6 +7,11 @@
   `UnknownContactManifoldsWorkspace`, which the relevant algorithm can replace with a workspace
   of the correct type at its next execution.
 
+### Fixed
+
+- Fix GJK closest points between touching or nearly touching shapes ending up far apart when the
+  simplex stalls right after a tetrahedron was reduced to one of its faces.
+
 ## 0.31.1
 
 ### Modified

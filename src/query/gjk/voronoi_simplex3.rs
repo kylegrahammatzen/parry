@@ -240,6 +240,9 @@ impl VoronoiSimplex {
                     self.dim = 1;
                 }
                 TetrahedronPointLocation::OnFace(i, coords) => {
+                    // NOTE: the dropped vertex is swapped into the unused slot 3 instead of being
+                    // overwritten: `prev_point` still needs it, since the previous simplex is the
+                    // triangle `abc` (GJK's witness points at a stall are computed from it).
                     match i {
                         0 => {
                             // abc
@@ -247,19 +250,19 @@ impl VoronoiSimplex {
                         }
                         1 => {
                             // abd
-                            self.vertices[2] = self.vertices[3];
+                            self.swap(2, 3);
                             self.proj = coords;
                         }
                         2 => {
                             // acd
-                            self.vertices[1] = self.vertices[3];
+                            self.swap(1, 3);
                             self.proj[0] = coords[0];
                             self.proj[1] = coords[2];
                             self.proj[2] = coords[1];
                         }
                         3 => {
                             // bcd
-                            self.vertices[0] = self.vertices[3];
+                            self.swap(0, 3);
                             self.proj[0] = coords[2];
                             self.proj[1] = coords[0];
                             self.proj[2] = coords[1];
