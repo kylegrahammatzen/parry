@@ -6,6 +6,8 @@
   algorithm no longer fails with `"Cannot deserialize custom shape."`. It now yields the new
   `UnknownContactManifoldsWorkspace`, which the relevant algorithm can replace with a workspace
   of the correct type at its next execution.
+- Ray casts on cones, round cuboids and round cylinders are now exact and faster. They used the
+  iterative GJK ray cast, which missed some rays and could be a few millimeters off.
 
 ## 0.31.1
 

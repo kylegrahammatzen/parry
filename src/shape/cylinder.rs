@@ -203,4 +203,24 @@ impl SupportMap for Cylinder {
         vres.y = dir.y.copy_sign_to(self.half_height);
         vres
     }
+
+    #[inline]
+    fn local_round_ray_cast(
+        &self,
+        border: Real,
+        ray: &crate::query::Ray,
+        max_time_of_impact: Real,
+        solid: bool,
+    ) -> Option<Option<crate::query::RayIntersection>> {
+        Some(
+            crate::query::details::ray_toi_and_normal_with_round_cylinder(
+                self.half_height,
+                self.radius,
+                border,
+                ray,
+                solid,
+            )
+            .filter(|hit| hit.time_of_impact <= max_time_of_impact),
+        )
+    }
 }

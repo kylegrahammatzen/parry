@@ -3,7 +3,13 @@
 #[doc(inline)]
 pub use self::ray::{Ray, RayCast, RayIntersection};
 pub use self::ray_ball::ray_toi_with_ball;
+#[cfg(feature = "dim3")]
+pub use self::ray_cone::ray_toi_and_normal_with_cone;
 pub use self::ray_halfspace::{line_toi_with_halfspace, ray_toi_with_halfspace};
+#[cfg(feature = "dim3")]
+pub use self::ray_round_cuboid::ray_toi_and_normal_with_round_cuboid;
+#[cfg(feature = "dim3")]
+pub use self::ray_round_cylinder::ray_toi_and_normal_with_round_cylinder;
 pub use self::ray_support_map::local_ray_intersection_with_support_map_with_params;
 #[cfg(feature = "dim3")]
 pub use self::ray_triangle::local_ray_intersection_with_triangle;
@@ -19,10 +25,16 @@ mod ray_bounding_sphere;
 mod ray_capsule;
 #[cfg(feature = "alloc")]
 mod ray_composite_shape;
+#[cfg(feature = "dim3")]
+mod ray_cone;
 mod ray_cuboid;
 mod ray_halfspace;
 #[cfg(feature = "alloc")]
 mod ray_heightfield;
+#[cfg(feature = "dim3")]
+mod ray_round_cuboid;
+#[cfg(feature = "dim3")]
+mod ray_round_cylinder;
 mod ray_round_shape;
 mod ray_support_map;
 mod ray_triangle;

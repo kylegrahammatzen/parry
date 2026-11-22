@@ -88,7 +88,8 @@
 //! convex parts or handled with different algorithms. This is why Parry provides composite
 //! shapes and specialized algorithms for triangle meshes.
 
-use crate::math::{Pose, Vector};
+use crate::math::{Pose, Real, Vector};
+use crate::query::{Ray, RayIntersection};
 
 /// Trait for convex shapes representable by a support mapping function.
 ///
@@ -261,6 +262,20 @@ pub trait SupportMap {
     /// any rotation or translation is applied. For transformed shapes, use
     /// [`support_point`](SupportMap::support_point) instead.
     fn local_support_point(&self, dir: Vector) -> Vector;
+
+    /// The ray cast on this shape rounded by `border_radius` (a [`RoundShape`](crate::shape::RoundShape)),
+    /// when the shape has an exact one: `None` (the default) makes the round shape use the
+    /// generic GJK ray cast.
+    #[doc(hidden)]
+    fn local_round_ray_cast(
+        &self,
+        _border_radius: Real,
+        _ray: &Ray,
+        _max_time_of_impact: Real,
+        _solid: bool,
+    ) -> Option<Option<RayIntersection>> {
+        None
+    }
 
     /// Same as [`local_support_point`](SupportMap::local_support_point) except that `dir` is
     /// guaranteed to be normalized (unit length).

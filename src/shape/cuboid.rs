@@ -489,6 +489,24 @@ impl SupportMap for Cuboid {
     fn local_support_point(&self, dir: Vector) -> Vector {
         dir.copy_sign_to(self.half_extents)
     }
+
+    #[cfg(feature = "dim3")]
+    #[inline]
+    fn local_round_ray_cast(
+        &self,
+        border_radius: Real,
+        ray: &crate::query::Ray,
+        max_time_of_impact: Real,
+        solid: bool,
+    ) -> Option<Option<crate::query::RayIntersection>> {
+        Some(crate::query::details::ray_toi_and_normal_with_round_cuboid(
+            self.half_extents,
+            border_radius,
+            ray,
+            max_time_of_impact,
+            solid,
+        ))
+    }
 }
 
 /*
