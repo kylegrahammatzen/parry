@@ -11,3 +11,4 @@ mod trimesh_connected_components;
 mod trimesh_intersection;
 mod trimesh_trimesh_toi;
 mod volume_mesh;
+mod voronoi_simplex3;
