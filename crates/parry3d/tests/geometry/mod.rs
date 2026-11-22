@@ -1,6 +1,7 @@
 mod aabb_scale;
 mod ball_ball_toi;
 mod ball_triangle_toi;
+mod cone_round_shape_ray_cast;
 mod convex_hull;
 mod cuboid_ray_cast;
 mod cylinder_cuboid_contact;
