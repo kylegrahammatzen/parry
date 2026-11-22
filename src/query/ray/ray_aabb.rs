@@ -243,3 +243,73 @@ mod tie_tests {
         }
     }
 }
+
+#[cfg(all(test, feature = "dim3"))]
+mod slab_tests {
+    use super::{ray_aabb, ray_aabb_general};
+    use crate::bounding_volume::Aabb;
+    use crate::math::{Real, Vector};
+    use crate::query::Ray;
+
+    /// The 3D ray-box cast does its three slabs at once and must give bitwise the same hits as
+    /// the general per-axis path, including on edge and vertex ties, signed zeros, tiny or
+    /// infinite direction components and NaNs.
+    #[test]
+    fn all_slabs_at_once_matches_the_general_path() {
+        let aabb = Aabb::new(Vector::new(-1.0, -0.5, -2.0), Vector::new(1.0, 0.5, 2.0));
+        let origins = [
+            -3.0,
+            -1.0,
+            -0.5,
+            -0.0,
+            0.0,
+            0.25,
+            0.5,
+            1.0,
+            2.0,
+            3.0,
+            Real::NAN,
+        ];
+        let dirs = [
+            -2.0,
+            -1.0,
+            -0.25,
+            -0.0,
+            0.0,
+            1.0e-40,
+            0.25,
+            1.0,
+            Real::INFINITY,
+            Real::NAN,
+        ];
+        let bits = |hit: Option<(Real, Vector, isize)>| {
+            hit.map(|(t, n, side)| (t.to_bits(), n.to_array().map(Real::to_bits), side))
+        };
+        let mut count = 0;
+        for &ox in &origins {
+            for &oy in &origins[..10] {
+                for &oz in &origins[..10] {
+                    for &dx in &dirs {
+                        for &dy in &dirs {
+                            for &dz in &dirs[..9] {
+                                let ray =
+                                    Ray::new(Vector::new(ox, oy, oz), Vector::new(dx, dy, dz));
+                                for max_toi in [0.5, 10.0] {
+                                    for solid in [true, false] {
+                                        assert_eq!(
+                                            bits(ray_aabb(&aabb, &ray, max_toi, solid)),
+                                            bits(ray_aabb_general(&aabb, &ray, max_toi, solid)),
+                                            "{ray:?} {max_toi} {solid}"
+                                        );
+                                        count += 1;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        assert!(count > 0);
+    }
+}
