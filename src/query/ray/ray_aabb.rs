@@ -72,7 +72,88 @@ impl RayCast for Aabb {
     }
 }
 
+#[cfg(feature = "dim3")]
+#[inline]
 fn ray_aabb(
+    aabb: &Aabb,
+    ray: &Ray,
+    max_time_of_impact: Real,
+    solid: bool,
+) -> Option<(Real, Vector, isize)> {
+    // All three slabs at once. Same arithmetic as `clip_aabb_line`, so the same times; any
+    // non-finite slab time (zero, NaN, tiny or infinite direction component, NaN origin) takes
+    // the general path, which keeps its exact handling of those cases.
+    let inv = Vector::ONE / ray.dir;
+    let a = (aabb.mins - ray.origin) * inv;
+    let b = (aabb.maxs - ray.origin) * inv;
+    // (Written with comparisons, which are false on NaN; `max` would drop a NaN.) An infinite
+    // direction component makes a zero `inv`, whose slab times are signed zeros in an order-dependent way.
+    let max = Vector::splat(Real::MAX);
+    if !(a.abs().cmplt(max) & b.abs().cmplt(max) & inv.cmpne(Vector::ZERO)).all() {
+        return ray_aabb_general(aabb, ray, max_time_of_impact, solid);
+    }
+    let flip = a.cmpgt(b);
+    let near = Vector::select(flip, b, a);
+    let far = Vector::select(flip, a, b);
+    let tmin = near.max_element();
+    let tmax = far.min_element();
+    if tmax < 0.0 || tmin > tmax {
+        return None;
+    }
+
+    let flips = flip.bitmask();
+    // `near_face`: the ray enters through the face; otherwise it leaves through it. Both
+    // normals point against the ray: +1 on the axis when the slab is flipped, -1 otherwise.
+    let hit = |t: Real, times: Vector, near_face: bool| -> (Real, Vector, isize) {
+        let tied = times.cmpeq(Vector::splat(t)).bitmask();
+        let i = tied.trailing_zeros() as usize;
+        let flipped = flips & (1 << i) != 0;
+        let side = if flipped == near_face {
+            -(i as isize + 1)
+        } else {
+            i as isize + 1
+        };
+        let normal = if tied & (tied - 1) == 0 {
+            let mut n = Vector::ZERO;
+            n[i] = if flipped { 1.0 } else { -1.0 };
+            n
+        } else {
+            // An edge or vertex: the normalized sum of the tied faces' normals.
+            let signs = Vector::select(flip, Vector::ONE, -Vector::ONE);
+            Vector::select(times.cmpeq(Vector::splat(t)), signs, Vector::ZERO).normalize()
+        };
+        // `times[i]`, not `t`: on a tie at zero they may differ in sign, and the general
+        // path keeps the first tied axis' value.
+        (times[i], normal, side)
+    };
+
+    if tmin < 0.0 {
+        if solid {
+            Some((0.0, Vector::ZERO, hit(tmax, far, false).2))
+        } else if tmax <= max_time_of_impact {
+            Some(hit(tmax, far, false))
+        } else {
+            None
+        }
+    } else if tmin <= max_time_of_impact {
+        Some(hit(tmin, near, true))
+    } else {
+        None
+    }
+}
+
+#[cfg(not(feature = "dim3"))]
+#[inline]
+fn ray_aabb(
+    aabb: &Aabb,
+    ray: &Ray,
+    max_time_of_impact: Real,
+    solid: bool,
+) -> Option<(Real, Vector, isize)> {
+    ray_aabb_general(aabb, ray, max_time_of_impact, solid)
+}
+
+fn ray_aabb_general(
     aabb: &Aabb,
     ray: &Ray,
     max_time_of_impact: Real,
